@@ -1,0 +1,12 @@
+name: wpg-views
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - pip==22.0.4
+  - python==3.10.4
+
+  - pip:
+    - -r api/requirements.txt
+    - -r ui/requirements.txt
+    - -r requirements.dev.txt
