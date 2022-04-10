@@ -1,0 +1,5 @@
+ARTICLES_TABLES = 'articles'
+AGENTS_TABLE = 'agents'
+ACCESS_TABLE = 'access_methods'
+GRANULARITY_TABLE = 'granularity'
+PAGE_VIEWS_TABLE = 'pageviews'
