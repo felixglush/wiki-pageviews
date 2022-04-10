@@ -23,13 +23,84 @@ def read_db_ini(filename='db/database.ini', section='postgresql'):
     return db
 
 
+def populate_tables_with_defaults():
+    """Populates agents, access methods, and granularity tables with default values."""
+
+    insert_into_agents = \
+        """
+        INSERT INTO {table} ({column})
+        VALUES
+            ('{all_agents}'),
+            ('{user}'),
+            ('{automated}'),
+            ('{spider}')
+        ON CONFLICT ({column}) DO NOTHING;
+        """.format(
+            table=schema_constants.AGENTS_TABLE,
+            column=schema_constants.AGENTS_NAME_COLUMN,
+            all_agents='all-agents',
+            user='user',
+            automated='automated',
+            spider='spider'
+        )
+
+    insert_into_access_table = \
+        """
+        INSERT INTO {table} ({column})
+        VALUES
+            ('{all_access}'),
+            ('{mobile_app}'),
+            ('{mobile_web}'),
+            ('{desktop}')
+        ON CONFLICT ({column}) DO NOTHING;
+        """.format(
+            table=schema_constants.ACCESS_TABLE,
+            column=schema_constants.ACCESS_NAME_COLUMN,
+            all_access='all-access',
+            mobile_app='mobile-app',
+            mobile_web='mobile-web',
+            desktop='desktop'
+        )
+
+    insert_into_granularity_table = \
+        """
+        INSERT INTO {table} ({column})
+        VALUES
+            ('{daily}'),
+            ('{monthly}')
+        ON CONFLICT ({column}) DO NOTHING;
+        """.format(
+            table=schema_constants.GRANULARITY_TABLE,
+            column=schema_constants.GRANULARITY_NAME_COLUMN,
+            daily='daily',
+            monthly='monthly'
+        )
+
+    conn = None
+    try:
+        params = read_db_ini()
+        conn = psycopg2.connect(**params)
+        conn.autocommit = True
+        cursor = conn.cursor()
+        cursor.execute(insert_into_access_table)
+        cursor.execute(insert_into_agents)
+        cursor.execute(insert_into_granularity_table)
+
+        cursor.close()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(f'Exception: {error}')
+    finally:
+        if conn is not None:
+            conn.close()
+
+
 def create_tables():
     """Creates the tables in the database created by `created_db()`."""
     articles_table = \
         """
         CREATE TABLE IF NOT EXISTS {0} (
             id SERIAL PRIMARY KEY,
-            name TEXT NOT NULL
+            name TEXT NOT NULL UNIQUE
         );
         """.format(
             schema_constants.ARTICLES_TABLES
@@ -39,7 +110,7 @@ def create_tables():
         """
         CREATE TABLE IF NOT EXISTS {0} (
             id SERIAL PRIMARY KEY,
-            name TEXT NOT NULL
+            name TEXT NOT NULL UNIQUE
         );
         """.format(
             schema_constants.AGENTS_TABLE
@@ -49,7 +120,7 @@ def create_tables():
         """
         CREATE TABLE IF NOT EXISTS {0} (
             id SERIAL PRIMARY KEY,
-            name TEXT NOT NULL
+            name TEXT NOT NULL UNIQUE
         );
         """.format(
             schema_constants.ACCESS_TABLE
@@ -59,7 +130,7 @@ def create_tables():
         """
         CREATE TABLE IF NOT EXISTS {0} (
             id SERIAL PRIMARY KEY,
-            name TEXT NOT NULL
+            name TEXT NOT NULL UNIQUE
         );
         """.format(
             schema_constants.GRANULARITY_TABLE
@@ -194,3 +265,4 @@ if __name__ == '__main__':
     create_user()
     create_db()
     create_tables()
+    populate_tables_with_defaults()
