@@ -7,6 +7,7 @@ dependencies:
   - python==3.10.4
 
   - pip:
+    - -r db/requirements.txt
     - -r api/requirements.txt
     - -r ui/requirements.txt
     - -r requirements.dev.txt
