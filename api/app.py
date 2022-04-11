@@ -2,14 +2,23 @@ import os
 import json
 import requests
 import uvicorn
-from fastapi import FastAPI
-from api.data_models import AddArticleToDB
-from data_models import UserRequestIn
-
+import yaml
+import utils
 from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException
+from data_models import UserRequestIn, AddArticleToDB
 
 load_dotenv()  # take environment variables from .env.
+
+
+def read_config(file='api/resource_config.yaml'):
+    with open(file) as configuration_file:
+        config_dict = yaml.load(configuration_file, Loader=yaml.FullLoader)
+    return config_dict
+
+
 app = FastAPI()
+config = read_config()
 
 
 @app.get('/')
@@ -19,8 +28,25 @@ def read_root():
 
 @app.post('/add_article')
 def add_article(user_request: AddArticleToDB):
-    """Add article to database of articles to watch"""
-    article = user_request.article
+    """Add article to table of articles to watch"""
+    article_name = utils.preprocess_article_name(user_request.article)
+
+    # TODO: implement endpoint to validate it's an actual article
+
+    request_header = {
+        'Content-Type': 'application/json',
+        'User-Agent': os.environ['WikiUserAgent']
+    }
+    db_protocol_scheme = config['db_api']['dev']['protocol_scheme']
+    db_host = config["db_api"]["dev"]["host"]
+    db_port = config["db_api"]["dev"]["port"]
+    add_article_endpoint = config["db_api"]["endpoints"]["add_article"]
+    db_api = f'{db_protocol_scheme}://{db_host}:{db_port}/{add_article_endpoint}'
+    data = {'article': article_name}
+    try:
+        requests.post(url=db_api, json=data, headers=request_header)
+    except HTTPException as e:
+        print(e)
 
 
 @app.get('/page_views/{project}/{access}/{agent}/{article}/{granularity}/{start}/{end}')
@@ -57,9 +83,10 @@ def query_wiki_api(user_request: UserRequestIn):
         'Content-Type': 'application/json',
         'User-Agent': os.environ['WikiUserAgent']
     }
-    api = 'https://wikimedia.org/api/rest_v1/'
-    request_params = f'metrics/pageviews/per-article/{project}/{access}/{agent}/{article}/{granularity}/{start}/{end}'
-    request_url = f'{api}{request_params}'
+    wiki_api = config['api']['wiki_api']
+    request_params = \
+        f'{config["api"]["wiki_pageviews_endpoint"]}{project}/{access}/{agent}/{article}/{granularity}/{start}/{end}'
+    request_url = f'{wiki_api}{request_params}'
 
     response = requests.get(url=request_url, headers=request_header)
     json_response = json.loads(response.text)
@@ -67,9 +94,15 @@ def query_wiki_api(user_request: UserRequestIn):
 
 
 def process_wiki_response(json_response):
-    """Parse response and persist"""
+    """Parse response and persist."""
     pass
 
 
+def run_local():
+    """Starts a local instance of the API."""
+    uvicorn.run("app:app", host=config['api']['host'],
+                port=config['api']['port'], log_level="info")
+
+
 if __name__ == "__main__":
-    uvicorn.run("app:app", host="127.0.0.1", port=8888, log_level="info")
+    run_local()

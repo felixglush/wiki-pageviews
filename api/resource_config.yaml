@@ -1,0 +1,14 @@
+api:
+  wiki_api: https://wikimedia.org/api/rest_v1/
+  wiki_pageviews_endpoint: metrics/pageviews/per-article/
+  host: localhost
+  port: 8888
+
+db_api:
+  dev:
+    protocol_scheme: http
+    host: localhost
+    port: 8889
+  endpoints:
+    add_article: add_article
+    add_pageviews: add_pageviews

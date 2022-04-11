@@ -134,3 +134,7 @@ def create_role_if_not_exists(rolename, password):
         END IF;
         END
         $do$;""".format(rolename, password)
+
+
+def insert_into_page_views_table():
+    pass
