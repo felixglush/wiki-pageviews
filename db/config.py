@@ -1,26 +1,6 @@
 import psycopg2
-from psycopg2 import sql
-from configparser import ConfigParser
 import sql_queries
-
-
-def read_db_ini(filename='db/database.ini', section='postgresql'):
-    """Read in user and database parameters from file."""
-    parser = ConfigParser()
-
-    # read config file
-    parser.read(filename)
-
-    # get section, default to postgresql
-    db = {}
-    if parser.has_section(section):
-        params = parser.items(section)
-        for param in params:
-            db[param[0]] = param[1]
-    else:
-        raise Exception(f'Section {section} not found in the {filename} file')
-
-    return db
+import utils
 
 
 def populate_tables_with_defaults():
@@ -28,7 +8,7 @@ def populate_tables_with_defaults():
 
     conn = None
     try:
-        params = read_db_ini()
+        params = utils.read_db_ini()
         conn = psycopg2.connect(**params)
         conn.autocommit = True
         cursor = conn.cursor()
@@ -50,7 +30,7 @@ def create_tables():
 
     conn = None
     try:
-        params = read_db_ini()
+        params = utils.read_db_ini()
         conn = psycopg2.connect(**params)
         conn.autocommit = True
         cursor = conn.cursor()
@@ -75,7 +55,7 @@ def create_db():
     conn = None
 
     try:
-        params = read_db_ini()
+        params = utils.read_db_ini()
         database_name = params['database']
         # establish the connection
         conn = psycopg2.connect(
@@ -112,7 +92,7 @@ def create_user():
     conn = None
 
     try:
-        params = read_db_ini()
+        params = utils.read_db_ini()
 
         conn = psycopg2.connect(
             user='postgres',
